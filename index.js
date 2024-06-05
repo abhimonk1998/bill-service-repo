@@ -1,23 +1,31 @@
 import dotenv from "dotenv";
 import express from "express";
 import bodyParser from "body-parser";
-import axios from "axios";
 import OpenAI from "openai";
+import cors from "cors";
 
 const openai = new OpenAI();
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 app.use(bodyParser.json({ limit: "50mb" }));
 
+app.use(
+  cors({
+    origin: "http://localhost:3000", // Allow requests from the React app
+    credentials: true, // To handle cookies and authentication if needed
+    methods: ["GET", "POST", "PUT", "DELETE"], // Allowed methods
+  })
+);
+
 // Route to handle image input and call OpenAI Vision API
 app.post("/parse-bill", async (req, res) => {
-  const { base64Image } = req.body;
+  const { bill_url } = req.body;
 
-  if (!base64Image) {
-    return res.status(400).json({ error: "Base64 image data is required." });
+  if (!bill_url) {
+    return res.status(400).json({ error: "Image is required." });
   }
 
   try {
@@ -36,7 +44,7 @@ app.post("/parse-bill", async (req, res) => {
             {
               type: "image_url",
               image_url: {
-                url: "https://my-bills-split-bucket.s3.us-east-2.amazonaws.com/6AF5E9FF-4D9D-4C26-9941-40BDA3411F39_4_5005_c.jpeg",
+                url: bill_url,
               },
             },
           ],
@@ -56,6 +64,14 @@ app.post("/parse-bill", async (req, res) => {
     // Now you can perform operations on the JavaScript object
     console.log(billData);
 
+    // TO-DO
+    // Front-end
+    // take list of persons involved at front-end.
+    // Show list of items as well as check boxes for persons.
+
+    // How to display:
+    // item, item details, checkboxes list of people.
+    //
     // Example operation: Calculate the total price of items
     const totalItemsPrice = billData.items.reduce(
       (sum, item) => sum + item.price,
